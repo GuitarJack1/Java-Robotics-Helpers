@@ -8,6 +8,10 @@ public class CorrectPathPoints {
     static String pathFileName = "path.txt";
     static String outputFileName = "newPathOutput.txt";
 
+    final static double MAX_VEL = 15.6; // In cm/s
+    final static double LINEAR_SLOW_ON_TURN = 0.1; // Bigger number causes the robot to slowdown more on turns
+    final static double ANGULAR_SPEED_ON_TURN = 0.5; // Bigger number causes robot to turn faster
+
     public static void main(String[] args) throws IOException {
         try (Scanner sc = new Scanner(new File(pathFileName)); FileWriter myWriter = new FileWriter(outputFileName)) {
             ArrayList<String> lines = new ArrayList<>();
@@ -17,19 +21,48 @@ public class CorrectPathPoints {
 
             boolean currPathIsReversed = lines.get(0).contains("REVERSED");
 
-            myWriter.write("PATH: " + lines.get(0).split("START ")[1] + "(" + (currPathIsReversed ? "REVERSE" : "FORWARD") + ")");
+            ArrayList<String> printedLines = new ArrayList<>();
+
+            printedLines.add("PATH: " + lines.get(0).split("START ")[1] + "(" + (currPathIsReversed ? "REVERSE" : "FORWARD") + ")");
             for (int i = 1; i < lines.size(); i++) {
                 String nextLine = lines.get(i);
 
                 if (nextLine.contains("START")) {
                     currPathIsReversed = nextLine.contains("REVERSED");
-                    myWriter.write("\n\nPATH: " + nextLine.split("START ")[1] + "(" + (currPathIsReversed ? "REVERSE" : "FORWARD") + ")");
+                    printedLines.add("\n\nPATH: " + nextLine.split("START ")[1] + "(" + (currPathIsReversed ? "REVERSE" : "FORWARD") + ")");
                     continue;
                 }
 
                 String[] splitLine = nextLine.split(",");
-                myWriter.write("\n" + splitLine[0] + ", " + splitLine[1] + ", " + "100.0" + ", " + (splitLine.length > 3 ? convertAngle(Double.parseDouble(splitLine[3])) : findAngle(splitLine, lines.get(i + 1).split(","), currPathIsReversed)));
+                printedLines.add("\n" + splitLine[0] + ", " + splitLine[1] + ", " + (splitLine.length > 3 ? convertAngle(Double.parseDouble(splitLine[3])) : findAngle(splitLine, lines.get(i + 1).split(","), currPathIsReversed)));
             }
+
+            ArrayList<String> outputLines = new ArrayList<>();
+            for (int i = 0; i < printedLines.size(); i++) {
+                if (i == printedLines.size() - 1 || printedLines.get(i + 1).contains("PATH")) {
+                    outputLines.add(printedLines.get(i) + "0.0, 0.0");
+                } else if (printedLines.get(i).contains("PATH")) {
+                    outputLines.add(printedLines.get(i));
+                } else {
+                    double currHeading = Double.parseDouble(printedLines.get(i).split(", ")[2]);
+                    double nextHeading = Double.parseDouble(printedLines.get(i + 1).split(", ")[2]);
+
+                    double headingError = currHeading - nextHeading;
+
+                    if (headingError < -180) {
+                        headingError = 360 + headingError;
+                    } else if (headingError > 180) {
+                        headingError = headingError - 360;
+                    }
+
+                    outputLines.add(printedLines.get(i) + ", " + (MAX_VEL - LINEAR_SLOW_ON_TURN * Math.abs(headingError)) + ", " + (headingError * ANGULAR_SPEED_ON_TURN));
+                }
+            }
+
+            for (String line : outputLines) {
+                myWriter.write(line);
+            }
+
         }
     }
 
