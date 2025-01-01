@@ -23,13 +23,13 @@ public class CorrectPathPoints {
 
             ArrayList<String> printedLines = new ArrayList<>();
 
-            printedLines.add("PATH: " + lines.get(0).split("START ")[1] + "(" + (currPathIsReversed ? "REVERSE" : "FORWARD") + ")");
+            printedLines.add("PATH(" + (currPathIsReversed ? "REVERSE" : "FORWARD") + ")" + ": " + lines.get(0).split("START ")[1]);
             for (int i = 1; i < lines.size(); i++) {
                 String nextLine = lines.get(i);
 
                 if (nextLine.contains("START")) {
                     currPathIsReversed = nextLine.contains("REVERSED");
-                    printedLines.add("\n\nPATH: " + nextLine.split("START ")[1] + "(" + (currPathIsReversed ? "REVERSE" : "FORWARD") + ")");
+                    printedLines.add("\n\nPATH(" + (currPathIsReversed ? "REVERSE" : "FORWARD") + ")" + ": " + nextLine.split("START ")[1]);
                     continue;
                 }
 
@@ -40,7 +40,7 @@ public class CorrectPathPoints {
             ArrayList<String> outputLines = new ArrayList<>();
             for (int i = 0; i < printedLines.size(); i++) {
                 if (i == printedLines.size() - 1 || printedLines.get(i + 1).contains("PATH")) {
-                    outputLines.add(printedLines.get(i) + "0.0, 0.0");
+                    outputLines.add(printedLines.get(i) + ", 0.0, 0.0");
                 } else if (printedLines.get(i).contains("PATH")) {
                     outputLines.add(printedLines.get(i));
                 } else {
